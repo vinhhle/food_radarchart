@@ -1,0 +1,456 @@
+---
+output:
+  html_document:
+    code_folding: hide
+    css: styles.css
+---
+
+<font size ="5"><center> **Food Vitamin and Mineral Composition**</center></font>
+
+----
+
+
+The radar charts show the average content of 9 minerals and vitamins in 6 food groups. The dataset comes from [The Official Portal for European Data](https://data.europa.eu/data/datasets/food-composition-database?locale=en).
+
+Since the values of minerals and vitamins are calculated in different units (mg and mcg), I've standardized them  to unit variance for visualizing on the same scale.  
+
+```{r message = FALSE, warning = FALSE, out.width = '100%', fig.align='center'}
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggradar)
+library(scales)
+library(cowplot)
+library(ggplot2)
+
+text_color = "#353d42"
+font = "Avenir Next"
+
+food <- read.csv("/Users/huvi/Downloads/germany_food_composition_vitamins_and_minerals.csv", header = TRUE, sep = ";") %>% 
+  select(food = efsaprodcode2_recoded, group = level1, nutrient = NUTRIENT_TEXT, amount = LEVEL) %>% 
+  filter(!(group %in% c("Additives,flavours, baking and processing aids", "Products for non-standard diets, food imitates and food supplements or fortifying agents", "Food products for young population", "Human milk", "Starchy roots or tubers and products thereof, sugar plants", "Composite dishes", "Sugar, confectionery and water-based sweet desserts", "Seasoning, sauces and condiments", "Fruit and vegetable juices and nectars", "Legumes, nuts, oilseeds and spices", "Grains and grain-based products", "Animal and vegetable fats and oils", "Alcoholic beverages", "Water and water-based beverages", "Coffee, cocoa, tea and infusions")),
+         nutrient %in% c("Calcium (Ca)", "Total iron", "Magnesium (Mg)", "Zinc (Zn)", "Copper (Cu)", "Phosphorus (P)", "Potassium (K)", "vitamin B-12", "vitamin E; alpha-tocopherol equiv from E vitamer activities")) %>% 
+  mutate(
+    group = case_when(
+      group == "Vegetables and vegetable products" ~ "Veggies",
+      group == "Fruit and fruit products" ~ "Fruits",
+      group == "Meat and meat products" ~ "Meat",
+      group == "Fish, seafood, amphibians, reptiles and invertebrates" ~ "Seafood",
+      group == "Milk and dairy products" ~ "Dairy",
+      group == "Eggs and egg products" ~ "Egg"
+    ),
+    nutrient = case_when(
+      nutrient == "Calcium (Ca)" ~ "Calcium",
+      nutrient == "Total iron" ~ "Iron",
+      nutrient == "Magnesium (Mg)" ~ "Magnesium",
+      nutrient == "Zinc (Zn)" ~ "Zinc",
+      nutrient == "Copper (Cu)" ~ "Copper",
+      nutrient == "Phosphorus (P)" ~ "Phosphorus",
+      nutrient == "Potassium (K)" ~ "Potassium",
+      nutrient == "vitamin B-12" ~ "Vitamin B12",
+      nutrient == "vitamin E; alpha-tocopherol equiv from E vitamer activities" ~ "Vitamin E"
+    )
+  )
+  
+food$amount = str_replace(food$amount, ",", ".")
+
+         
+food_subset <- food %>% 
+  filter(food %in% c("Hen eggs", "Duck eggs", "Geese eggs", "Quail eggs",
+  "Cow milk, whole", "Cottage cheese", "Yoghurt, cow milk, plain", "Cream, plain",
+  "Freshwater fish", "Octopuses", "Lobster, european", "Shrimps and prawns",
+  "Bovine fresh meat", "Pig fresh meat", "Chicken fresh meat", "Goat fresh meat",
+  "Broccoli and similar-", "Kales and similar-", "Tomatoes and similar-", "Cucumbers",
+  "Strawberries and similar-","Apples and similar-", "Common banana", "Avocados")) %>% 
+  mutate(
+    food = case_when(
+      food == "Cow milk, whole" ~ "Cow milk",
+      food == "Yoghurt, cow milk, plain" ~ "Yoghurt",
+      food == "Cream, plain" ~ "Plain cream",
+      food == "Lobster, european" ~ "Lobster",
+      food == "Bovine fresh meat" ~ "Beef",
+      food == "Pig fresh meat" ~ "Pork",
+      food == "Chicken fresh meat" ~ "Chicken",
+      food == "Goat fresh meat" ~ "Goat meat",
+      food == "Broccoli and similar-" ~ "Broccoli",
+      food == "Kales and similar-" ~ "Kales",
+      food == "Tomatoes and similar-" ~ "Tomatoes",
+      food == "Strawberries and similar-" ~ "Strawberries",
+      food == "Apples and similar-" ~ "Apples",
+      food == "Common banana" ~ "Bananas",
+      TRUE ~ as.character(food)
+    ),
+    amount = as.numeric(amount)
+  ) 
+
+test <- pivot_wider(food_subset, names_from = nutrient, values_from = amount) %>%
+  mutate_each(funs(rescale),-c(group, food)) %>% 
+  select(food, Calcium:Copper, group)
+```
+
+<font size ="5"><center> **Vegetables**</center></font>
+```{r message = FALSE, warning = FALSE, out.width = '100%', fig.align='center'}
+broccoli <- ggradar(test[1,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#15983DFF",
+        plot.title = "Broccoli") +
+    theme(plot.title = element_text(family = font, color = "#15983DFF", size = 13, hjust = 0.5, face = "bold"))
+
+kales <- ggradar(test[2,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#15983DFF",
+        plot.title = "Kales") +
+    theme(plot.title = element_text(family = font, color = "#15983DFF", size = 13, hjust = 0.5, face = "bold"))
+
+tomatoes <- ggradar(test[3,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#15983DFF",
+        plot.title = "Tomatoes") +
+    theme(plot.title = element_text(family = font, color = "#15983DFF", size = 13, hjust = 0.5, face = "bold"))
+
+cucumbers <- ggradar(test[4,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#15983DFF",
+        plot.title = "Cucumbers") +
+    theme(plot.title = element_text(family = font, color = "#15983DFF", size = 13, hjust = 0.5, face = "bold"))
+
+plot_grid(broccoli, kales, tomatoes, cucumbers, nrow = 2)
+```
+
+<font size ="5"><center> **Fruits**</center></font>
+```{r message = FALSE, warning = FALSE, out.width = '100%', fig.align='center'}
+apples <- ggradar(test[5,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#EC579AFF",
+        plot.title = "Apples") +
+    theme(plot.title = element_text(family = font, color = "#EC579AFF", size = 13, hjust = 0.5, face = "bold"))
+
+strawberries <- ggradar(test[6,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#EC579AFF",
+        plot.title = "Strawberries") +
+    theme(plot.title = element_text(family = font, color = "#EC579AFF", size = 13, hjust = 0.5, face = "bold"))
+
+avocadoes <- ggradar(test[7,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#EC579AFF",
+        plot.title = "Avocadoes") +
+    theme(plot.title = element_text(family = font, color = "#EC579AFF", size = 13, hjust = 0.5, face = "bold"))
+
+bananas <- ggradar(test[8,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#EC579AFF",
+        plot.title = "Bananas") +
+    theme(plot.title = element_text(family = font, color = "#EC579AFF", size = 13, hjust = 0.5, face = "bold"))
+
+plot_grid(apples, strawberries, avocadoes, bananas, nrow = 2)
+```
+
+<font size ="5"><center> **Meat**</center></font>
+```{r message = FALSE, warning = FALSE, out.width = '100%', fig.align='center'}
+beef <- ggradar(test[9,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#EE0011FF",
+        plot.title = "Beef") +
+    theme(plot.title = element_text(family = font, color = "#EE0011FF", size = 13, hjust = 0.5, face = "bold"))
+
+pork <- ggradar(test[10,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#EE0011FF",
+        plot.title = "Pork") +
+    theme(plot.title = element_text(family = font, color = "#EE0011FF", size = 13, hjust = 0.5, face = "bold"))
+
+goat <- ggradar(test[7,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#EE0011FF",
+        plot.title = "Goat meat") +
+    theme(plot.title = element_text(family = font, color = "#EE0011FF", size = 13, hjust = 0.5, face = "bold"))
+
+chicken <- ggradar(test[8,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#EE0011FF",
+        plot.title = "Chicken") +
+    theme(plot.title = element_text(family = font, color = "#EE0011FF", size = 13, hjust = 0.5, face = "bold"))
+
+plot_grid(beef, pork, goat, chicken, nrow = 2)
+```
+
+<font size ="5"><center> **Seafood**</center></font>
+```{r message = FALSE, warning = FALSE, out.width = '100%', fig.align='center'}
+fish <- ggradar(test[13,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#149BEDFF",
+        plot.title = "Fish") +
+    theme(plot.title = element_text(family = font, color = "#149BEDFF", size = 13, hjust = 0.5, face = "bold"))
+
+lobster <- ggradar(test[14,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#149BEDFF",
+        plot.title = "Lobsters") +
+    theme(plot.title = element_text(family = font, color = "#149BEDFF", size = 13, hjust = 0.5, face = "bold"))
+
+shrimp <- ggradar(test[15,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#149BEDFF",
+        plot.title = "Shrimps") +
+    theme(plot.title = element_text(family = font, color = "#149BEDFF", size = 13, hjust = 0.5, face = "bold"))
+
+octopus <- ggradar(test[16,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#149BEDFF",
+        plot.title = "Octopuses") +
+    theme(plot.title = element_text(family = font, color = "#149BEDFF", size = 13, hjust = 0.5, face = "bold"))
+
+plot_grid(fish, lobster, shrimp, octopus, nrow = 2)
+```
+
+<font size ="5"><center> **Dairy Products**</center></font>
+```{r message = FALSE, warning = FALSE, out.width = '100%', fig.align='center'}
+milk <- ggradar(test[17,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#9A703EFF",
+        plot.title = "Cow milk") +
+    theme(plot.title = element_text(family = font, color = "#9A703EFF", size = 13, hjust = 0.5, face = "bold"))
+
+cream <- ggradar(test[18,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#9A703EFF",
+        plot.title = "Plain cream") +
+    theme(plot.title = element_text(family = font, color = "#9A703EFF", size = 13, hjust = 0.5, face = "bold"))
+
+yoghurt <- ggradar(test[19,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#9A703EFF",
+        plot.title = "Yoghurt") +
+    theme(plot.title = element_text(family = font, color = "#9A703EFF", size = 13, hjust = 0.5, face = "bold"))
+
+cheese <- ggradar(test[20,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#9A703EFF",
+        plot.title = "Cottage cheese") +
+    theme(plot.title = element_text(family = font, color = "#9A703EFF", size = 13, hjust = 0.5, face = "bold"))
+
+plot_grid(milk, cream, yoghurt, cheese, nrow = 2)
+```
+
+<font size ="5"><center> **Eggs**</center></font>
+```{r message = FALSE, warning = FALSE, out.width = '100%', fig.align='center'}
+hen <- ggradar(test[21,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#FEC10BFF",
+        plot.title = "Hen eggs") +
+    theme(plot.title = element_text(family = font, color = "#FEC10BFF", size = 13, hjust = 0.5, face = "bold"))
+
+duck <- ggradar(test[22,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#FEC10BFF",
+        plot.title = "Duck eggs") +
+    theme(plot.title = element_text(family = font, color = "#FEC10BFF", size = 13, hjust = 0.5, face = "bold"))
+
+geese <- ggradar(test[23,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#FEC10BFF",
+        plot.title = "Geese eggs") +
+    theme(plot.title = element_text(family = font, color = "#FEC10BFF", size = 13, hjust = 0.5, face = "bold"))
+
+quail <- ggradar(test[24,1:10],
+        base.size = 15, font.radar = font,
+        plot.extent.x.sf = 1, plot.extent.y.sf = 1.15,
+        grid.line.width = 0.1,
+        gridline.min.linetype = "solid", gridline.mid.linetype = "solid", gridline.max.linetype = "solid",
+        gridline.min.colour = "#cbcbcb",  gridline.mid.colour = "#cbcbcb",  gridline.max.colour = "#cbcbcb",
+        grid.label.size = 2, gridline.label.offset = -0.15,
+        axis.label.size = 2, axis.label.offset = 1.14,
+        axis.line.colour = "#cbcbcb",
+        group.line.width = 0.5, group.point.size = 0.5,
+        group.colours = "#FEC10BFF",
+        plot.title = "Quail eggs") +
+    theme(plot.title = element_text(family = font, color = "#FEC10BFF", size = 13, hjust = 0.5, face = "bold"))
+
+plot_grid(hen, duck, geese, quail, nrow = 2)
+```
+
